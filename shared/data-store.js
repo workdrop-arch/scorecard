@@ -117,3 +117,29 @@ export async function seedLocalIfEmpty() {
     localSeedIfEmpty(path, docs);
   }
 }
+
+async function deleteAllDocs(collection) {
+  const docs = await once(collection);
+  await Promise.all(docs.map(d => collection.remove(d.id)));
+}
+
+// Wipes every trip-specific document — used by the Admin Portal's "Reset
+// Trip Data" danger-zone action (Roster & Settings tab) so an organizer
+// can clear a test run, or start clean for next year's trip, without
+// touching the Firebase console. Deletes players' handicapHistory
+// subcollections first (they're only reachable per-player), then every
+// top-level collection. Nothing about the trip survives this — including
+// settings/teams — by design, since "reset" means a genuinely blank slate.
+export async function resetAllTripData() {
+  const playersDocs = await once(players());
+  await Promise.all(playersDocs.map(p => deleteAllDocs(playerHandicapHistory(p.id))));
+
+  const allCollections = [
+    players(), teams(), settings(), rounds(), matches(), roundResults(),
+    sideActionRounds(), ctpResults(), longDriveResults(), skinsResults(),
+    sideBets(), tripDays(), scheduleItems(),
+  ];
+  for (const collection of allCollections) {
+    await deleteAllDocs(collection);
+  }
+}
