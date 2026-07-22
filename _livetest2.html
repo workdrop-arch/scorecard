@@ -22,9 +22,22 @@ try {
   ok('initializeAuth() with inMemoryPersistence returned', !!auth);
   flush();
 
-  const t0 = Date.now();
-  await signInWithEmailAndPassword(auth, 'claude-test-admin-temp@example.com', 'TempPass!9x2K7qLm');
-  ok('sign-in completed', true, `took ${Date.now() - t0}ms`);
+  let lastErr = null;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const t0 = Date.now();
+    try {
+      await signInWithEmailAndPassword(auth, 'claude-test-admin-temp@example.com', 'TempPass!9x2K7qLm');
+      ok(`sign-in completed on attempt ${attempt}`, true, `took ${Date.now() - t0}ms`);
+      lastErr = null;
+      break;
+    } catch (e) {
+      lastErr = e;
+      results.push(`  attempt ${attempt} failed after ${Date.now() - t0}ms :: ${e.code || e.message}`);
+      flush();
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+  if (lastErr) fail('all sign-in attempts', lastErr);
 } catch (e) {
   fail('diagnostic', e);
 }
