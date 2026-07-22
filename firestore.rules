@@ -1,0 +1,82 @@
+rules_version = '2';
+
+// Security rules for the trip dashboard's Firestore project.
+// Paste this into Firebase Console → Firestore Database → Rules, or
+// deploy it with `firebase deploy --only firestore:rules` if you ever
+// install the Firebase CLI.
+//
+// Trust model (see 02-New-Dashboard-Plan.md §3.1, §8): this is a
+// friend-group trip tool, not an enterprise app. Admin signs in with a
+// real email/password Firebase Auth account; golfers sign in with
+// Firebase Anonymous Auth behind a shared passcode gate that's a
+// convenience filter, not a cryptographic identity — there's no way to
+// verify a golfer really is the specific roster player they picked at
+// login. Rules below distinguish "admin" from "golfer" using Firebase
+// Auth's sign_in_provider claim (password vs anonymous), which IS
+// reliable, and lean on that rather than pretending golfer identity is
+// verifiable. The real safeguard against bad golfer-submitted data is
+// the pending/confirmed admin-approval workflow already built into the
+// app (Admin Portal's Approve buttons) — these rules just make sure a
+// golfer session can never mark its own submission "confirmed" or touch
+// anything outside the collections they're meant to write to.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin()    { return isSignedIn() && request.auth.token.firebase.sign_in_provider == 'password'; }
+    function isGolfer()   { return isSignedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous'; }
+
+    // Everything is publicly readable — the whole point is a shareable
+    // read-only dashboard link that needs no login.
+
+    // Admin-only collections: nobody else writes to the roster, schedule,
+    // round definitions, matches, or side-action setup.
+    match /settings/{id}         { allow read: if true; allow write: if isAdmin(); }
+    match /teams/{id}            { allow read: if true; allow write: if isAdmin(); }
+    match /rounds/{id}           { allow read: if true; allow write: if isAdmin(); }
+    match /matches/{id}          { allow read: if true; allow write: if isAdmin(); }
+    match /sideActionRounds/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /skinsResults/{id}     { allow read: if true; allow write: if isAdmin(); } // admin-only entry, no golfer self-report — see plan §5.4
+    match /tripDays/{id}         { allow read: if true; allow write: if isAdmin(); }
+    match /scheduleItems/{id}    { allow read: if true; allow write: if isAdmin(); }
+
+    match /players/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+      match /handicapHistory/{checkpointId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
+    // Golfer-submittable collections (plan §6.1, §6.3): a golfer session
+    // can create or update a doc, but only ever landing it as "pending" —
+    // only an authenticated admin write can set status to "confirmed".
+    // This is what makes the Admin Portal's Approve button the one true
+    // gate, regardless of what a golfer's own client sends.
+    match /roundResults/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() || (isGolfer() && request.resource.data.status == 'pending');
+      allow delete: if isAdmin();
+    }
+    match /ctpResults/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() || (isGolfer() && request.resource.data.status == 'pending');
+      allow delete: if isAdmin();
+    }
+    match /longDriveResults/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() || (isGolfer() && request.resource.data.status == 'pending');
+      allow delete: if isAdmin();
+    }
+
+    // Side bets (plan §6.2): fully golfer-manageable — create, settle, or
+    // void — since these are meant to be created and resolved by the
+    // group itself, not admin-gated. Admin can also clean up if needed.
+    match /sideBets/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() || isGolfer();
+      allow delete: if isAdmin();
+    }
+  }
+}

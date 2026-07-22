@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Trip Dashboard</title>
+<link rel="stylesheet" href="../shared/design-system.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="trip-name" id="login-trip-name"></div>
+    <h1>Admin Portal</h1>
+    <div class="sub">Sign in to manage the trip dashboard.</div>
+    <form id="login-form"></form>
+    <div class="login-error" id="login-error"></div>
+    <div class="mode-badge" id="mode-badge"></div>
+  </div>
+</div>
+
+<div id="app-shell" hidden>
+  <div class="top-bar">
+    <div class="brand"><span id="brand-title">Admin Portal</span><span class="tag">Admin</span><span class="tag" id="mode-tag"></span></div>
+    <div class="right">
+      <button type="button" class="btn small ghost" id="sign-out-btn">Sign out</button>
+    </div>
+  </div>
+  <nav class="tab-nav" id="tab-nav"></nav>
+  <div id="section-content"></div>
+</div>
+
+<script type="module" src="admin.js"></script>
+</body>
+</html>

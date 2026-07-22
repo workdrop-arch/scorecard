@@ -1,0 +1,209 @@
+/* ═══════════════════════════════════════════════
+   SHARED DESIGN SYSTEM
+   Shared visual language for the public dashboard, Admin Portal, and
+   Golfer Portal so all three read as one product.
+   Core tokens + component classes only — page-specific layout stays
+   in each app's own stylesheet.
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --red: #c41e3a;
+  --red-dark: #9a1830;
+  --red-light: #e8344f;
+  --blue: #003da5;
+  --blue-dark: #002d7a;
+  --blue-light: #1a5fd4;
+  --gold: #d4a843;
+  --bg: #0a0e14;
+  --bg-card: #131a24;
+  --bg-card-2: #182230;
+  --text: #e8edf3;
+  --text-muted: #7a8ba3;
+  --border: #1e2d3d;
+
+  /* Status colors (used inline in the original; tokenized here for reuse in forms) */
+  --good: #4ade80;   /* live indicator, handicap improved, success */
+  --warn: #e8805a;   /* handicap worsened, weather error, destructive actions */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Typography helpers ── */
+.eyebrow {
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.eyebrow.muted { color: var(--text-muted); }
+
+/* ── Card ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 0.95rem;
+}
+
+/* ── Badge pills (champion / rookie / belt) — identical to dashboard ── */
+.champ-badge, .rookie-badge, .belt-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+.champ-badge { color: #1a1a1a; background: var(--gold); }
+.rookie-badge {
+  color: var(--text-muted);
+  background: rgba(122,139,163,0.12);
+  border: 1px solid rgba(122,139,163,0.3);
+  text-transform: uppercase;
+  font-size: 0.5rem;
+}
+.belt-badge {
+  color: #1a1a1a;
+  background: linear-gradient(135deg, #d4b073 0%, #8b6f47 100%);
+}
+
+/* ── Team dot ── */
+.team-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 0.5rem; vertical-align: middle;
+}
+.team-dot.red { background: var(--red); }
+.team-dot.blue { background: var(--blue); }
+
+/* ── Buttons ── */
+.btn {
+  appearance: none; cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.7rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card-2);
+  color: var(--text);
+  transition: border-color 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+}
+.btn:hover { border-color: rgba(255,255,255,0.25); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.primary { background: var(--gold); border-color: var(--gold); color: #1a1a1a; }
+.btn.primary:hover { background: #e0b654; }
+.btn.danger { background: transparent; border-color: rgba(232,128,90,0.4); color: var(--warn); }
+.btn.danger:hover { background: rgba(232,128,90,0.1); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--text-muted); }
+.btn.ghost:hover { color: var(--text); }
+.btn.small { padding: 0.35rem 0.65rem; font-size: 0.62rem; }
+
+/* ── Form controls ── */
+.field { display: flex; flex-direction: column; gap: 0.3rem; }
+.field label {
+  font-family: 'Oswald', sans-serif; font-size: 0.58rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted);
+}
+.field input[type="text"],
+.field input[type="number"],
+.field input[type="date"],
+.field input[type="time"],
+.field input[type="email"],
+.field input[type="password"],
+.field select,
+.field textarea {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--bg-card-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--gold);
+}
+.field textarea { resize: vertical; min-height: 3.5rem; }
+.field .hint { font-size: 0.62rem; color: var(--text-muted); }
+
+.checkbox-field {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.78rem; color: var(--text);
+}
+.checkbox-field input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: var(--gold);
+}
+
+.form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.form-row > .field { flex: 1 1 160px; min-width: 0; }
+
+/* ── Data table (admin CRUD lists) ── */
+.data-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden;
+}
+.data-table th {
+  font-family: 'Oswald', sans-serif; font-size: 0.58rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted);
+  padding: 0.6rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border);
+  background: var(--bg-card-2);
+}
+.data-table td {
+  padding: 0.55rem 0.6rem; font-size: 0.8rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr.is-editing td { background: rgba(212,168,67,0.05); }
+.data-table .col-actions { text-align: right; white-space: nowrap; width: 1%; }
+.data-table .empty-row td {
+  text-align: center; padding: 1.5rem; color: var(--text-muted);
+  font-style: italic; font-size: 0.75rem;
+}
+
+/* ── Status pill (upcoming / live / final) ── */
+.status-pill {
+  display: inline-block; font-family: 'Oswald', sans-serif; font-size: 0.6rem;
+  font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.15rem 0.5rem; border-radius: 10px;
+}
+.status-pill.upcoming { color: var(--text-muted); background: rgba(122,139,163,0.12); }
+.status-pill.live { color: var(--good); background: rgba(74,222,128,0.12); }
+.status-pill.final { color: var(--gold); background: rgba(212,168,67,0.12); }
+
+/* ── Toast / inline feedback ── */
+.toast {
+  position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+  background: var(--bg-card-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.65rem 1.1rem; font-size: 0.78rem; color: var(--text);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 999; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+.toast.error { border-color: rgba(232,128,90,0.5); color: var(--warn); }
+
+/* ── Small scroll container for wide tables on narrow viewports ── */
+.table-scroll { overflow-x: auto; }
+
+@media (max-width: 600px) {
+  .form-row { flex-direction: column; }
+  .form-row > .field { flex: 1 1 auto; }
+  .data-table th, .data-table td { padding: 0.45rem 0.4rem; font-size: 0.72rem; }
+}

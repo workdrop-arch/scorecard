@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Golfer — Trip Dashboard</title>
+<link rel="stylesheet" href="../shared/design-system.css">
+<link rel="stylesheet" href="golfer.css">
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="trip-name" id="login-trip-name"></div>
+    <h1>Golfer Check-In</h1>
+    <div class="sub">Pick your name and enter the trip passcode to submit scores and side bets.</div>
+    <form id="login-form">
+      <div class="field">
+        <label>Your name</label>
+        <select name="playerId" id="login-player-select"><option value="">— loading roster —</option></select>
+      </div>
+      <div class="field">
+        <label>Trip passcode</label>
+        <input type="password" name="passcode" autocomplete="off" />
+      </div>
+      <button type="submit" class="btn primary">Continue</button>
+    </form>
+    <div class="login-error" id="login-error"></div>
+    <div class="mode-badge" id="mode-badge"></div>
+  </div>
+</div>
+
+<div id="app-shell" hidden>
+  <div class="top-bar">
+    <div class="brand"><span id="brand-title">Golfer Portal</span><span class="who" id="who-am-i"></span></div>
+    <div class="right">
+      <button type="button" class="btn small ghost" id="sign-out-btn">Switch</button>
+    </div>
+  </div>
+  <nav class="tab-nav" id="tab-nav"></nav>
+  <div id="section-content"></div>
+</div>
+
+<script type="module" src="golfer.js"></script>
+</body>
+</html>
