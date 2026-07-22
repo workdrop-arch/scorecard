@@ -15,6 +15,7 @@ const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 let weatherCache = null;
 let weatherCacheDatesKey = null;
 let weatherLoading = false;
+let latestWeatherState = null;
 
 function wxDaysUntilDate(dateStr) {
   const today = new Date();
@@ -372,6 +373,12 @@ export async function renderWeather(state) {
   const view = document.getElementById('view-weather');
   if (!view) return;
 
+  // Track the freshest state seen even while a fetch is in flight below —
+  // other collections (e.g. scheduleItems) can sync in mid-fetch, and the
+  // eventual render must reflect them, not whatever was current when the
+  // fetch started.
+  latestWeatherState = state;
+
   if (!state.WEATHER_DAYS.length) {
     view.innerHTML = `<div class="weather-wrap"><div class="weather-loading">No trip days set up yet.</div></div>`;
     return;
@@ -386,7 +393,7 @@ export async function renderWeather(state) {
   try {
     weatherCache = await wxLoadAll(state.WEATHER_DAYS);
     weatherCacheDatesKey = datesKey;
-    wxRenderFromCache(state);
+    wxRenderFromCache(latestWeatherState);
   } catch (e) {
     view.innerHTML = `<div class="weather-wrap"><div class="weather-error">Weather load failed: ${escapeHtml(e.message)}</div></div>`;
   } finally {
