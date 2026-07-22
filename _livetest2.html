@@ -28,6 +28,17 @@ import { renderSchedule as renderScheduleAdmin } from '/scorecard/admin/sections
 import { renderMyRound } from '/scorecard/golfer/sections/myRound.js';
 import { renderSideBets } from '/scorecard/golfer/sections/sideBets.js';
 import { renderCtpLongDrive } from '/scorecard/golfer/sections/ctpLongDrive.js';
+import { firestoreApp } from '/scorecard/shared/firestore-store.js';
+import { getAuth, setPersistence, inMemoryPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+// Test-only: force in-memory auth persistence BEFORE any sign-in call.
+// Hypothesis: headless Chromium's default IndexedDB-based persistence is
+// what's hanging on successful sign-ins in this environment (failed
+// sign-ins return fast since they never reach the persistence step) —
+// this does not touch the real app's auth.js/golfer-auth.js at all.
+try {
+  await setPersistence(getAuth(firestoreApp()), inMemoryPersistence);
+} catch (e) { console.error('setPersistence failed', e); }
 
 const logEl = document.getElementById('log');
 const scratch = document.getElementById('scratch');
