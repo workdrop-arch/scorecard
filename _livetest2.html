@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>persistence diagnostic</title></head>
+<html><head><meta charset="UTF-8"><title>persistence diagnostic 2</title></head>
 <body>
 <div id="log" style="font-family:monospace;white-space:pre-wrap;font-size:12px"></div>
 <script type="module">
@@ -14,18 +14,17 @@ flush();
 
 try {
   const { firestoreApp } = await import('/scorecard/shared/firestore-store.js');
-  ok('firestore-store imported', true);
-  const { getAuth, setPersistence, inMemoryPersistence, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-  ok('firebase-auth imported', true);
-  const auth = getAuth(firestoreApp());
-  ok('getAuth() returned something', !!auth);
-  await setPersistence(auth, inMemoryPersistence);
-  ok('setPersistence succeeded', true);
+  const { initializeAuth, inMemoryPersistence, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+  ok('imports done', true);
+  flush();
+
+  const auth = initializeAuth(firestoreApp(), { persistence: inMemoryPersistence });
+  ok('initializeAuth() with inMemoryPersistence returned', !!auth);
   flush();
 
   const t0 = Date.now();
   await signInWithEmailAndPassword(auth, 'claude-test-admin-temp@example.com', 'TempPass!9x2K7qLm');
-  ok('sign-in with in-memory persistence completed', true, `took ${Date.now() - t0}ms`);
+  ok('sign-in completed', true, `took ${Date.now() - t0}ms`);
 } catch (e) {
   fail('diagnostic', e);
 }
