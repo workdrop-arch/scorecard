@@ -1,154 +1,35 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>full live test</title></head>
+<html><head><meta charset="UTF-8"><title>persistence diagnostic</title></head>
 <body>
 <div id="log" style="font-family:monospace;white-space:pre-wrap;font-size:12px"></div>
-<div id="scratch" style="position:absolute;left:-9999px;top:-9999px;width:900px"></div>
-<div id="dash-root">
-  <div class="hero"><div class="hero-title" id="hero-title-text"></div><div class="hero-event" id="hero-event-text"></div></div>
-  <div class="tabs-wrap"><div class="tabs">
-    <button class="tab-btn active" data-tab="ryder">Ryder Cup</button>
-    <button class="tab-btn" data-tab="carletonplace">Carleton Place Cup</button>
-    <button class="tab-btn" data-tab="side">Side Action</button>
-    <button class="tab-btn" data-tab="weather">Schedule</button>
-  </div></div>
-  <div id="view-ryder" class="view active"></div>
-  <div id="view-carletonplace" class="view"></div>
-  <div id="view-side" class="view"></div>
-  <div id="view-weather" class="view"></div>
-</div>
 <script type="module">
-import { signIn as adminSignIn } from '/scorecard/shared/auth.js';
-import { golferSignIn } from '/scorecard/shared/golfer-auth.js';
-import * as store from '/scorecard/shared/data-store.js';
-import { renderRoster } from '/scorecard/admin/sections/roster.js';
-import { renderRyder as renderRyderAdmin } from '/scorecard/admin/sections/ryder.js';
-import { renderCarletonPlace as renderCPCAdmin } from '/scorecard/admin/sections/carletonPlace.js';
-import { renderSideAction as renderSideAdmin } from '/scorecard/admin/sections/sideAction.js';
-import { renderSchedule as renderScheduleAdmin } from '/scorecard/admin/sections/schedule.js';
-import { renderMyRound } from '/scorecard/golfer/sections/myRound.js';
-import { renderSideBets } from '/scorecard/golfer/sections/sideBets.js';
-import { renderCtpLongDrive } from '/scorecard/golfer/sections/ctpLongDrive.js';
-import { firestoreApp } from '/scorecard/shared/firestore-store.js';
-import { getAuth, setPersistence, inMemoryPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-
-// Test-only: force in-memory auth persistence BEFORE any sign-in call.
-// Hypothesis: headless Chromium's default IndexedDB-based persistence is
-// what's hanging on successful sign-ins in this environment (failed
-// sign-ins return fast since they never reach the persistence step) —
-// this does not touch the real app's auth.js/golfer-auth.js at all.
-try {
-  await setPersistence(getAuth(firestoreApp()), inMemoryPersistence);
-} catch (e) { console.error('setPersistence failed', e); }
-
 const logEl = document.getElementById('log');
-const scratch = document.getElementById('scratch');
 const results = [];
 function ok(name, cond, extra) { results.push(`${cond ? 'PASS' : 'FAIL'} — ${name}${extra ? ' :: ' + extra : ''}`); }
 function fail(name, err) { results.push(`FAIL — ${name} :: ${err && err.stack ? err.stack : err}`); }
 function flush() { logEl.textContent = results.join('\n'); }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-function withTimeout(p, ms, label) {
-  return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`TIMEOUT(${ms}ms): ${label}`)), ms))]);
+
+results.push('script started');
+flush();
+
+try {
+  const { firestoreApp } = await import('/scorecard/shared/firestore-store.js');
+  ok('firestore-store imported', true);
+  const { getAuth, setPersistence, inMemoryPersistence, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+  ok('firebase-auth imported', true);
+  const auth = getAuth(firestoreApp());
+  ok('getAuth() returned something', !!auth);
+  await setPersistence(auth, inMemoryPersistence);
+  ok('setPersistence succeeded', true);
+  flush();
+
+  const t0 = Date.now();
+  await signInWithEmailAndPassword(auth, 'claude-test-admin-temp@example.com', 'TempPass!9x2K7qLm');
+  ok('sign-in with in-memory persistence completed', true, `took ${Date.now() - t0}ms`);
+} catch (e) {
+  fail('diagnostic', e);
 }
-function mountDiv() { const d = document.createElement('div'); scratch.appendChild(d); return d; }
-
-async function run() {
-  // ── Admin sign-in with a throwaway test account (not the real one) ──
-  try {
-    await withTimeout(adminSignIn({ email: 'claude-test-admin-temp@example.com', password: 'TempPass!9x2K7qLm' }), 25000, 'admin sign-in');
-    ok('temp admin signed in', true);
-  } catch (e) { fail('admin sign-in', e); results.push('ABORTING — cannot continue without admin.'); flush(); return; }
-  flush();
-
-  // ── Roster: teams + players ──
-  let redId, blueId, samId, caseyId, roundId;
-  try {
-    const mount = mountDiv();
-    await renderRoster(mount);
-    await sleep(300);
-
-    // Trip settings
-    const tripForm = mount.querySelector('#trip-settings-form');
-    tripForm.heroTitle.value = 'Live Test Trip';
-    tripForm.tripDateLabel.value = 'Test Dates';
-    tripForm.dispatchEvent(new Event('submit', { cancelable: true }));
-    await withTimeout(sleep(3000), 8000, 'trip settings save');
-
-    // Team name
-    const redForm = mount.querySelector('#team-form-red form');
-    redForm.name.value = 'Live Test Red';
-    redForm.dispatchEvent(new Event('submit', { cancelable: true }));
-    await sleep(2000);
-
-    // Add 2 players
-    const table = mount.querySelector('#players-table');
-    for (const [first, last, team] of [['LiveSam', 'Rivera', 'red'], ['LiveCasey', 'Brooks', 'blue']]) {
-      table.querySelector('[data-add]').click();
-      await sleep(100);
-      const row = table.querySelector('[data-row-form="new"]');
-      row.querySelector('[name="f_first"]').value = first;
-      row.querySelector('[name="f_last"]').value = last;
-      row.querySelector('[name="f_team"]').value = team;
-      table.querySelector('[data-save="new"]').click();
-      await withTimeout(sleep(3000), 8000, `add player ${first}`);
-    }
-
-    const playersDocs = await withTimeout(store.once(store.players()), 15000, 'read players after add');
-    const sam = playersDocs.find(p => p.first === 'LiveSam');
-    const casey = playersDocs.find(p => p.first === 'LiveCasey');
-    ok('both test players created', !!sam && !!casey, `found=${playersDocs.map(p=>p.first).join(',')}`);
-    samId = sam?.id; caseyId = casey?.id;
-  } catch (e) { fail('roster setup', e); }
-  flush();
-
-  // ── Ryder: a round + a match ──
-  try {
-    const mount = mountDiv();
-    await renderRyderAdmin(mount);
-    await sleep(300);
-    const roundsTable = mount.querySelector('#rounds-table');
-    roundsTable.querySelector('[data-add]').click();
-    await sleep(100);
-    const row = roundsTable.querySelector('[data-row-form="new"]');
-    row.querySelector('[name="f_format"]').value = 'Live Test Format';
-    row.querySelector('[name="f_course"]').value = 'Live Test Course';
-    row.querySelector('[name="f_status"]').value = 'final';
-    roundsTable.querySelector('[data-save="new"]').click();
-    await withTimeout(sleep(4000), 10000, 'add round');
-
-    const roundsDocs = await withTimeout(store.once(store.rounds()), 15000, 'read rounds');
-    const round = roundsDocs.find(r => r.format === 'Live Test Format');
-    ok('test round created with status final', !!round && round.status === 'final');
-    roundId = round?.id;
-
-    if (roundId && samId && caseyId) {
-      await sleep(500);
-      const select = mount.querySelector('#match-round-select');
-      select.value = roundId;
-      select.dispatchEvent(new Event('change'));
-      await sleep(300);
-      const matchesMount = mount.querySelector('#matches-table-mount');
-      matchesMount.querySelector('[data-add]').click();
-      await sleep(100);
-      const mrow = matchesMount.querySelector('[data-row-form="new"]');
-      mrow.querySelector('[name="f_label"]').value = 'Live Match 1';
-      Array.from(mrow.querySelector('[name="f_redPlayerIds"]').options).forEach(o => { if (o.value === samId) o.selected = true; });
-      Array.from(mrow.querySelector('[name="f_bluePlayerIds"]').options).forEach(o => { if (o.value === caseyId) o.selected = true; });
-      mrow.querySelector('[name="f_redPts"]').value = '3';
-      mrow.querySelector('[name="f_bluePts"]').value = '0';
-      matchesMount.querySelector('[data-save="new"]').click();
-      await withTimeout(sleep(4000), 10000, 'add match');
-      const matchesDocs = await withTimeout(store.once(store.matches()), 15000, 'read matches');
-      const m = matchesDocs.find(x => x.label === 'Live Match 1');
-      ok('test match created with correct score', !!m && m.redPts === 3 && m.bluePts === 0, JSON.stringify(m));
-    }
-  } catch (e) { fail('ryder setup', e); }
-  flush();
-
-  results.push('--- (continuing in part 2) ---');
-  flush();
-  window.__testState = { samId, caseyId, roundId };
-}
-run();
+results.push('---DONE---');
+flush();
 </script>
 </body></html>
