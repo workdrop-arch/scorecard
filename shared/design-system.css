@@ -30,6 +30,15 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* The browser's default [hidden] { display: none } rule has very low
+   specificity (attribute selector) — any element styled with an ID
+   selector that also sets `display` (e.g. #login-screen { display: flex })
+   silently wins over it, so toggling the `.hidden` DOM property in JS
+   stops working: the attribute is set, the element just never actually
+   disappears. This makes `hidden` reliably win regardless of what else
+   targets the element. */
+[hidden] { display: none !important; }
+
 body {
   font-family: 'Inter', -apple-system, sans-serif;
   background: var(--bg);
